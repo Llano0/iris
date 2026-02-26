@@ -1,71 +1,50 @@
 import streamlit as st
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-model.fit(X_train_scaled, y_train)
-preds = model.predict(X_test_scaled)
-
-# -----------------------------
-# Métricas
-# -----------------------------
-accuracy = accuracy_score(y_test, preds)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("📊 Accuracy")
-    st.metric("Exactitud", f"{accuracy:.3f}")
-
-with col2:
-    st.subheader("📄 Reporte de Clasificación")
-    report = classification_report(y_test, preds, target_names=class_names, output_dict=True)
-    st.dataframe(pd.DataFrame(report).transpose())
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 
 # -----------------------------
-# Matriz de confusión
+# Configuración inicial
 # -----------------------------
-st.subheader("🔍 Matriz de Confusión")
-cm = confusion_matrix(y_test, preds)
+st.set_page_config(page_title="Clasificador IRIS Pedagógico", layout="wide")
 
-fig, ax = plt.subplots()
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
-            xticklabels=class_names,
-            yticklabels=class_names, ax=ax)
-ax.set_xlabel("Predicción")
-ax.set_ylabel("Real")
-st.pyplot(fig)
-
-# -----------------------------
-# Visualización de datos
-# -----------------------------
-st.subheader("📈 Visualización de Features")
-feature_x = st.selectbox("Feature X", X.columns, index=0)
-feature_y = st.selectbox("Feature Y", X.columns, index=1)
-
-fig2, ax2 = plt.subplots()
-sns.scatterplot(data=df, x=feature_x, y=feature_y, hue="species", palette="Set2", ax=ax2)
-st.pyplot(fig2)
+st.title("🌸 Clasificador IRIS Interactivo")
+st.markdown("""
+Esta app permite:
+- Entrenar diferentes modelos
+- Visualizar métricas y gráficas
+- Probar predicciones manuales
+""")
 
 # -----------------------------
-# Predicción interactiva
+# Cargar dataset
 # -----------------------------
-st.subheader("🧪 Probar una nueva muestra")
+@st.cache_data
+def load_data():
+    data = load_iris()
+    df = pd.DataFrame(data.data, columns=data.feature_names)
+    df["target"] = data.target
+    df["species"] = df["target"].map(dict(enumerate(data.target_names)))
+    return df, data.target_names
 
-input_cols = st.columns(4)
-user_input = []
 
-for i, col in enumerate(X.columns):
-    val = input_cols[i].number_input(col, float(df[col].min()), float(df[col].max()), float(df[col].mean()))
-    user_input.append(val)
+df, class_names = load_data()
 
-if st.button("Predecir especie"):
-    sample = scaler.transform([user_input])
-    pred = model.predict(sample)[0]
-    proba = model.predict_proba(sample)[0]
+# -----------------------------
+# Sidebar pedagógica
+# -----------------------------
+st.sidebar.header("⚙️ Configuración del Modelo")
 
-    st.success(f"🌼 Predicción: {class_names[pred]}")
+model_option = st.sidebar.selectbox(
+    "Selecciona el modelo",
 
-    st.subheader("Probabilidades")
-    prob_df = pd.DataFrame({
-        "Clase": class_names,
-        "Probabilidad": proba
-    })
-    st.dataframe(prob_df)
